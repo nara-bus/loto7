@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="LOTO7金運">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#c0000f">
+<title>LOTO7 金運ジェネレーター</title>
+
+<!-- PWA manifest inline -->
+<link rel="manifest" href="data:application/json;charset=utf-8,%7B%22name%22%3A%22LOTO7%20%E9%87%91%E9%81%8B%E3%82%B8%E3%82%A7%E3%83%8D%E3%83%AC%E3%83%BC%E3%82%BF%E3%83%BC%22%2C%22short_name%22%3A%22LOTO7%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23fff8e8%22%2C%22theme_color%22%3A%22%23c0000f%22%2C%22icons%22%3A%5B%5D%7D">
+
+<style>
+  :root {
+    --bg: #fff8e8;
+    --gold: #d4920a;
+    --gold-bright: #f5b800;
+    --gold-light: #fde68a;
+    --red: #c0392b;
+    --ink: #2c1a00;
+    --ink2: #5a3e1b;
+    --paper: #fffbf0;
+    --shadow: rgba(180,120,0,0.18);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    /* System fonts that work on both iOS and Android without internet */
+    font-family: 'Hiragino Mincho ProN', 'Hiragino Mincho Pro', 'Yu Mincho', 'YuMincho',
+                 'Noto Serif JP', 'MS Mincho', 'HG明朝E', serif;
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 0 0 env(safe-area-inset-bottom, 40px);
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 50% -10%, rgba(245,184,0,0.22) 0%, transparent 70%),
+      radial-gradient(ellipse 60% 40% at 80% 100%, rgba(192,57,43,0.08) 0%, transparent 60%),
+      linear-gradient(180deg, #fff8e8 0%, #fff0cc 100%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Floating sparkles */
+  .sparkles { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+  .sparkle {
+    position: absolute;
+    opacity: 0;
+    animation: floatUp linear infinite;
+  }
+  @keyframes floatUp {
+    0%   { opacity: 0; transform: translateY(0) rotate(0deg) scale(0.8); }
+    10%  { opacity: 0.6; }
+    80%  { opacity: 0.3; }
+    100% { opacity: 0; transform: translateY(-80vh) rotate(360deg) scale(1.1); }
+  }
+
+  /* Banner */
+  .banner {
+    width: 100%;
+    background: linear-gradient(135deg, #b8000a 0%, #e8001a 40%, #b8000a 100%);
+    padding: 18px 24px 14px;
+    padding-top: calc(18px + env(safe-area-inset-top, 0px));
+    text-align: center;
+    position: relative;
+    z-index: 1;
+    box-shadow: 0 4px 24px rgba(180,0,10,0.3);
+  }
+  .banner::before, .banner::after {
+    content: '◆';
+    position: absolute;
+    top: 50%; transform: translateY(-50%);
+    color: rgba(255,220,80,0.55);
+    font-size: 20px;
+  }
+  .banner::before { left: 20px; }
+  .banner::after  { right: 20px; }
+
+  .banner-en {
+    font-family: 'Arial Black', 'Arial Bold', Impact, 'Helvetica Neue', sans-serif;
+    font-size: clamp(44px, 11vw, 76px);
+    letter-spacing: 10px;
+    color: #fde68a;
+    line-height: 1;
+    font-weight: 900;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.4), 0 0 30px rgba(255,220,80,0.5);
+  }
+  .banner-ja {
+    font-size: 13px;
+    letter-spacing: 6px;
+    color: rgba(255,220,130,0.85);
+    margin-top: 4px;
+  }
+
+  /* Lucky message */
+  .lucky-msg {
+    margin: 22px auto 0;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+  }
+  .lucky-msg .kanji {
+    font-size: clamp(26px, 6.5vw, 42px);
+    font-weight: 800;
+    background: linear-gradient(135deg, #b07000 0%, #f5b800 50%, #b07000 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    filter: drop-shadow(0 2px 6px rgba(192,120,0,0.3));
+    letter-spacing: 4px;
+  }
+  .lucky-msg .stars {
+    font-size: 16px;
+    letter-spacing: 6px;
+    color: var(--gold-bright);
+    margin-top: 4px;
+  }
+
+  /* Card */
+  .card {
+    background: var(--paper);
+    border: 2px solid rgba(212,146,10,0.28);
+    border-radius: 20px;
+    padding: 28px 20px 24px;
+    margin: 20px 16px 0;
+    box-shadow: 0 8px 40px var(--shadow), inset 0 1px 0 rgba(255,255,255,0.9);
+    position: relative;
+    z-index: 1;
+    max-width: 560px;
+    width: calc(100% - 32px);
+  }
+  .card::before, .card::after {
+    content: '✦';
+    position: absolute;
+    color: rgba(212,146,10,0.28);
+    font-size: 14px;
+  }
+  .card::before { top: 10px; left: 14px; }
+  .card::after  { top: 10px; right: 14px; }
+
+  /* Balls */
+  .balls-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
+    align-items: center;
+    min-height: 90px;
+    margin-bottom: 24px;
+    padding: 10px 0 18px;
+  }
+  .empty-msg {
+    color: #c8aa70;
+    font-size: 14px;
+    letter-spacing: 2px;
+    text-align: center;
+  }
+
+  .ball {
+    width: 66px;
+    height: 66px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Arial Black', Impact, 'Helvetica Neue', sans-serif;
+    font-size: 24px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    position: relative;
+    transform: scale(0) rotate(-180deg);
+    opacity: 0;
+    transition: transform 0.5s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s ease;
+    flex-shrink: 0;
+  }
+  .ball.show { transform: scale(1) rotate(0deg); opacity: 1; }
+
+  .ball.main {
+    background: radial-gradient(circle at 32% 28%, #fff5b0 0%, #f5c200 40%, #c88a00 100%);
+    color: #5a2e00;
+    box-shadow:
+      0 4px 18px rgba(200,138,0,0.5),
+      0 0 0 3px rgba(245,194,0,0.22),
+      inset 0 3px 6px rgba(255,255,200,0.6),
+      inset 0 -3px 6px rgba(100,60,0,0.22);
+  }
+  .ball.main::after {
+    content: '';
+    position: absolute;
+    top: 11px; left: 15px;
+    width: 15px; height: 7px;
+    background: rgba(255,255,255,0.45);
+    border-radius: 50%;
+    transform: rotate(-30deg);
+  }
+
+  .ball.bonus {
+    background: radial-gradient(circle at 32% 28%, #ff9090 0%, #e03030 40%, #900010 100%);
+    color: #fff;
+    box-shadow:
+      0 4px 18px rgba(192,57,43,0.55),
+      0 0 0 3px rgba(232,0,30,0.18),
+      inset 0 3px 6px rgba(255,180,180,0.45),
+      inset 0 -3px 6px rgba(80,0,0,0.28);
+  }
+  .ball.bonus::after {
+    content: '';
+    position: absolute;
+    top: 11px; left: 15px;
+    width: 15px; height: 7px;
+    background: rgba(255,255,255,0.35);
+    border-radius: 50%;
+    transform: rotate(-30deg);
+  }
+
+  .ball-label {
+    font-family: sans-serif;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    position: absolute;
+    bottom: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    color: var(--red);
+  }
+
+  .separator {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    flex-shrink: 0;
+  }
+  .separator.show { opacity: 1; }
+  .separator span {
+    width: 4px; height: 4px;
+    border-radius: 50%;
+    background: var(--gold);
+  }
+
+  /* Button */
+  .generate-btn {
+    width: 100%;
+    position: relative;
+    background: linear-gradient(135deg, #e8001a 0%, #c0000f 50%, #e8001a 100%);
+    color: #fde68a;
+    border: none;
+    padding: 20px 24px;
+    font-family: inherit;
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: 6px;
+    cursor: pointer;
+    border-radius: 12px;
+    box-shadow: 0 6px 20px rgba(192,0,15,0.4), inset 0 1px 0 rgba(255,180,100,0.3);
+    transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+    overflow: hidden;
+    /* Prevents double-tap zoom on iOS */
+    touch-action: manipulation;
+  }
+  .generate-btn::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(255,255,255,0.12) 0%, transparent 50%);
+    pointer-events: none;
+  }
+  .generate-btn:active {
+    transform: translateY(2px) scale(0.97);
+    box-shadow: 0 2px 8px rgba(192,0,15,0.4);
+  }
+  .generate-btn.rolling {
+    animation: btnPulse 0.5s ease-in-out infinite alternate;
+  }
+  @keyframes btnPulse {
+    from { filter: brightness(1); box-shadow: 0 6px 20px rgba(192,0,15,0.4); }
+    to   { filter: brightness(1.2); box-shadow: 0 8px 36px rgba(245,180,0,0.5), 0 0 0 4px rgba(245,184,0,0.18); }
+  }
+
+  /* Coin burst */
+  #burstLayer { position: fixed; inset: 0; pointer-events: none; z-index: 10; overflow: hidden; }
+  .coin {
+    position: absolute;
+    opacity: 0;
+    animation: coinFly 1s ease-out forwards;
+  }
+  @keyframes coinFly {
+    0%   { opacity: 1; transform: translate(0,0) rotate(0deg) scale(1); }
+    100% { opacity: 0; transform: translate(var(--dx), var(--dy)) rotate(var(--dr)) scale(0.4); }
+  }
+
+  /* Divider */
+  .divider {
+    display: flex; align-items: center; gap: 10px;
+    margin: 22px 0 14px;
+  }
+  .divider-line {
+    flex: 1; height: 1px;
+    background: linear-gradient(to right, transparent, rgba(212,146,10,0.35), transparent);
+  }
+  .divider-icon { color: var(--gold); font-size: 13px; letter-spacing: 4px; white-space: nowrap; }
+
+  /* History */
+  .history-section {
+    margin: 0 16px;
+    max-width: 560px;
+    width: calc(100% - 32px);
+    position: relative;
+    z-index: 1;
+  }
+  .history-list {
+    display: flex; flex-direction: column; gap: 7px;
+    max-height: 200px; overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .history-list::-webkit-scrollbar { width: 3px; }
+  .history-list::-webkit-scrollbar-track { background: transparent; }
+  .history-list::-webkit-scrollbar-thumb { background: var(--gold-light); border-radius: 2px; }
+
+  .history-item {
+    background: linear-gradient(135deg, #fffbee, #fff8e0);
+    border: 1px solid rgba(212,146,10,0.2);
+    border-radius: 10px;
+    padding: 9px 14px;
+    display: flex; align-items: center; gap: 8px;
+    animation: slideIn 0.3s ease;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .history-nums {
+    display: flex; gap: 5px; flex: 1; flex-wrap: wrap; align-items: center;
+  }
+  .h-ball {
+    width: 30px; height: 30px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 900;
+    font-family: 'Arial Black', Impact, sans-serif;
+  }
+  .h-ball.main {
+    background: radial-gradient(circle at 35% 30%, #fff0a0, #f0b800 70%);
+    color: #4a2800; box-shadow: 0 2px 6px rgba(200,140,0,0.3);
+  }
+  .h-ball.bonus {
+    background: radial-gradient(circle at 35% 30%, #ff9090, #d02020 70%);
+    color: #fff; box-shadow: 0 2px 6px rgba(192,0,20,0.3);
+  }
+  .h-sep { width: 1px; height: 18px; background: rgba(212,146,10,0.28); }
+  .history-time { font-size: 10px; color: #a07030; white-space: nowrap; }
+
+  .clear-btn {
+    background: none;
+    border: 1px solid rgba(212,146,10,0.35);
+    color: var(--gold);
+    padding: 8px 20px;
+    font-size: 11px; letter-spacing: 3px;
+    cursor: pointer;
+    display: block; margin: 10px auto 0;
+    border-radius: 20px;
+    font-family: inherit;
+    touch-action: manipulation;
+  }
+
+  .notice {
+    font-size: 10px; color: #b09060; text-align: center;
+    margin-top: 28px; letter-spacing: 1px;
+    position: relative; z-index: 1; padding: 0 16px;
+    padding-bottom: env(safe-area-inset-bottom, 16px);
+  }
+
+  /* Install banner */
+  #installBanner {
+    display: none;
+    position: fixed;
+    bottom: env(safe-area-inset-bottom, 0);
+    left: 0; right: 0;
+    background: linear-gradient(135deg, #b07000, #d4920a);
+    color: #fff8e8;
+    padding: 12px 20px;
+    z-index: 100;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 -4px 16px rgba(180,100,0,0.3);
+  }
+  #installBanner.show { display: flex; }
+  #installBanner span { flex: 1; font-size: 13px; letter-spacing: 1px; }
+  #installBtn {
+    background: #fff8e8;
+    color: #b07000;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 800;
+    font-size: 13px;
+    cursor: pointer;
+    touch-action: manipulation;
+    white-space: nowrap;
+  }
+  #closeBanner {
+    background: none; border: none; color: rgba(255,248,232,0.7);
+    font-size: 20px; cursor: pointer; padding: 0 4px;
+    touch-action: manipulation;
+  }
+</style>
+</head>
+<body>
+
+<div class="sparkles" id="sparkles"></div>
+<div id="burstLayer"></div>
+
+<div class="banner">
+  <div class="banner-en">LOTO 7</div>
+  <div class="banner-ja">✦ 金運 番号ジェネレーター ✦</div>
+</div>
+
+<div class="lucky-msg">
+  <div class="kanji">大吉 · 開運 · 招福</div>
+  <div class="stars">★ ★ ★ ★ ★</div>
+</div>
+
+<div class="card">
+  <div class="balls-container" id="ballsContainer">
+    <span class="empty-msg">✦ ボタンを押して幸運を呼ぼう ✦</span>
+  </div>
+  <button class="generate-btn" id="generateBtn" onclick="generate()">
+    🪙 番号を生成する
+  </button>
+</div>
+
+<div class="history-section" id="historySection" style="display:none;">
+  <div class="divider">
+    <div class="divider-line"></div>
+    <div class="divider-icon">✦ 履　歴 ✦</div>
+    <div class="divider-line"></div>
+  </div>
+  <div class="history-list" id="historyList"></div>
+  <button class="clear-btn" onclick="clearHistory()">履歴をクリア</button>
+</div>
+
+<div class="notice">※ ロト7の当選を保証するものではありません。楽しみのためのツールです。</div>
+
+<!-- Install prompt banner (Android Chrome) -->
+<div id="installBanner">
+  <span>🪙 ホーム画面に追加してすぐ使える！</span>
+  <button id="installBtn">追加する</button>
+  <button id="closeBanner">✕</button>
+</div>
+
+<script>
+// ─── Floating sparkles ───────────────────────────────────────────────────────
+const ITEMS = ['🪙','✨','⭐','💛','🌟','💰','🎰'];
+function initSparkles() {
+  const c = document.getElementById('sparkles');
+  for (let i = 0; i < 20; i++) {
+    const s = document.createElement('div');
+    s.className = 'sparkle';
+    s.textContent = ITEMS[i % ITEMS.length];
+    s.style.left = Math.random() * 100 + '%';
+    s.style.top = (30 + Math.random() * 70) + 'vh';
+    const dur = 7 + Math.random() * 11;
+    s.style.animationDuration = dur + 's';
+    s.style.animationDelay = -(Math.random() * dur) + 's';
+    s.style.fontSize = (11 + Math.random() * 13) + 'px';
+    c.appendChild(s);
+  }
+}
+initSparkles();
+
+// ─── Coin burst ──────────────────────────────────────────────────────────────
+function burstCoins() {
+  const layer = document.getElementById('burstLayer');
+  const cx = window.innerWidth / 2;
+  const cy = window.innerHeight * 0.45;
+  for (let i = 0; i < 22; i++) {
+    const coin = document.createElement('div');
+    coin.className = 'coin';
+    coin.textContent = ['🪙','✨','⭐','💛','🌟'][i % 5];
+    const angle = (i / 22) * Math.PI * 2 + Math.random() * 0.5;
+    const dist = 90 + Math.random() * 200;
+    coin.style.left = cx + 'px';
+    coin.style.top = cy + 'px';
+    coin.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
+    coin.style.setProperty('--dy', Math.sin(angle) * dist - 90 + 'px');
+    coin.style.setProperty('--dr', (Math.random() * 720 - 360) + 'deg');
+    coin.style.fontSize = (14 + Math.random() * 14) + 'px';
+    coin.style.animationDelay = (Math.random() * 0.25) + 's';
+    layer.appendChild(coin);
+    setTimeout(() => coin.remove(), 1400);
+  }
+}
+
+// ─── Loto 7 logic ────────────────────────────────────────────────────────────
+const history = [];
+
+function pickNumbers() {
+  const pool = Array.from({length: 37}, (_, i) => i + 1);
+  const picked = [];
+  while (picked.length < 8) {
+    const idx = Math.floor(Math.random() * pool.length);
+    picked.push(pool.splice(idx, 1)[0]);
+  }
+  return { main: picked.slice(0,7).sort((a,b)=>a-b), bonus: picked[7] };
+}
+
+function generate() {
+  const btn = document.getElementById('generateBtn');
+  const container = document.getElementById('ballsContainer');
+  container.innerHTML = '';
+  btn.classList.add('rolling');
+  btn.disabled = true;
+  burstCoins();
+
+  const result = pickNumbers();
+  let lastDelay = 0;
+
+  result.main.forEach((num, i) => {
+    const ball = createBall(num, 'main');
+    container.appendChild(ball);
+    const t = 80 + i * 130;
+    setTimeout(() => ball.classList.add('show'), t);
+    lastDelay = t;
+  });
+
+  const sep = document.createElement('div');
+  sep.className = 'separator';
+  for (let i = 0; i < 5; i++) sep.appendChild(document.createElement('span'));
+  container.appendChild(sep);
+  setTimeout(() => sep.classList.add('show'), lastDelay + 100);
+
+  const bonusBall = createBall(result.bonus, 'bonus');
+  const label = document.createElement('div');
+  label.className = 'ball-label';
+  label.textContent = 'ボーナス';
+  bonusBall.appendChild(label);
+  container.appendChild(bonusBall);
+  setTimeout(() => bonusBall.classList.add('show'), lastDelay + 240);
+
+  setTimeout(() => {
+    btn.classList.remove('rolling');
+    btn.disabled = false;
+    addHistory(result);
+  }, lastDelay + 420);
+}
+
+function createBall(num, type) {
+  const ball = document.createElement('div');
+  ball.className = `ball ${type}`;
+  ball.textContent = String(num).padStart(2,'0');
+  return ball;
+}
+
+function addHistory(result) {
+  const now = new Date();
+  const time = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+  history.unshift({ ...result, time });
+  if (history.length > 10) history.pop();
+  renderHistory();
+}
+
+function renderHistory() {
+  const section = document.getElementById('historySection');
+  const list = document.getElementById('historyList');
+  section.style.display = 'block';
+  list.innerHTML = '';
+  history.forEach(entry => {
+    const item = document.createElement('div');
+    item.className = 'history-item';
+    const nums = document.createElement('div');
+    nums.className = 'history-nums';
+    entry.main.forEach(n => {
+      const b = document.createElement('div');
+      b.className = 'h-ball main';
+      b.textContent = String(n).padStart(2,'0');
+      nums.appendChild(b);
+    });
+    const sp = document.createElement('div');
+    sp.className = 'h-sep';
+    nums.appendChild(sp);
+    const bb = document.createElement('div');
+    bb.className = 'h-ball bonus';
+    bb.textContent = String(entry.bonus).padStart(2,'0');
+    nums.appendChild(bb);
+    const t = document.createElement('div');
+    t.className = 'history-time';
+    t.textContent = entry.time;
+    item.appendChild(nums);
+    item.appendChild(t);
+    list.appendChild(item);
+  });
+}
+
+function clearHistory() {
+  history.length = 0;
+  document.getElementById('historySection').style.display = 'none';
+}
+
+// ─── PWA Install prompt (Android Chrome) ─────────────────────────────────────
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('installBanner').classList.add('show');
+});
+
+document.getElementById('installBtn').addEventListener('click', async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const { outcome } = await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  document.getElementById('installBanner').classList.remove('show');
+});
+
+document.getElementById('closeBanner').addEventListener('click', () => {
+  document.getElementById('installBanner').classList.remove('show');
+});
+
+// ─── Service Worker (inline) — enables full offline use ───────────────────────
+const SW_CODE = `
+const CACHE = 'loto7-v1';
+self.addEventListener('install', e => {
+  self.skipWaiting();
+});
+self.addEventListener('activate', e => {
+  e.waitUntil(clients.claim());
+});
+self.addEventListener('fetch', e => {
+  e.respondWith(
+    caches.match(e.request).then(cached => cached || fetch(e.request))
+  );
+});
+`;
+if ('serviceWorker' in navigator) {
+  const blob = new Blob([SW_CODE], { type: 'application/javascript' });
+  const swUrl = URL.createObjectURL(blob);
+  navigator.serviceWorker.register(swUrl, { scope: '/' }).catch(() => {});
+}
+</script>
+</body>
+</html>
